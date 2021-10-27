@@ -1,8 +1,11 @@
 library(tidyverse)
 #skips the unnecessary part of the txt file, registers columsn separated by spaces, turns blank entries into NA's (important for later), and doesn't include any column names
-x <- read.delim("RB\\CR_RB_A2_20210831.txt", sep = " ", na.strings=c("", "NA"),skip = 4, header= FALSE
+x <- read.delim("RB\\CR_RB_A2_20210729.txt", sep = " ", na.strings=c("", "NA"),skip = 4, header= FALSE
                 #col.names = c("Code",DTY","ARR", "TRF","DUR","TTY","TAG","SCD","ANT","NCD","EFA")
-                              )
+  )
+
+y <- clean_txt(x)                
+                                              
 x1 <- x %>%
   select(26:ncol(x))
 

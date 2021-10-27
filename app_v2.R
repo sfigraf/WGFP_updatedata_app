@@ -3,6 +3,8 @@ library(tidyverse)
 library(lubridate)
 library(DT)
 
+#changes max upload size to 30 mb
+options(shiny.maxRequestSize=30*1024^2)
 
 source("clean_data_function.R")
 previous_detections <- read.csv("WGFP_Raw_20210505.csv")
@@ -21,14 +23,14 @@ ui <- fluidPage(
             tags$hr(),
             checkboxInput("header", "Header", TRUE),
             conditionalPanel(condition = "output.fileUploaded == true",
-                             actionButton(inputId = "download1", label = "Save as CSV")
+                             downloadButton(outputId = "download1", label = "Save as CSV")
                              ) #end of conditional panel
         ),
         mainPanel(tabsetPanel(
             tabPanel("How to Use",
                      includeHTML(paste0("www/", "WGFP_data_uploads_about.html"))),
             tabPanel("New Detections",
-                     DT::dataTableOutput("new_data_contents")),
+                     tableOutput("new_data_contents")),
             tabPanel("Previous Detections",
                      DT::dataTableOutput("previousdata"))
             
@@ -66,20 +68,26 @@ server <- function(input, output) {
         clean_txt(new_data())
     })
     
-    output$new_data_contents <- renderDataTable({
+    output$new_data_contents <- renderTable({
         cleaned_data()
+    })
+    
+    output$previousdata <- renderTable({
+        previous_detections()
     })
     
 
 # Downloading CSV ---------------------------------------------------------
-    # output$download1 <- downloadHandler(
-    #     filename = function() {
-    #         paste(input$file1, ".csv", sep = "")
-    #     },
-    #     content = function(file) {
-    #         write.csv(datasetInput(), file, row.names = FALSE)
-    #     }
-    # )
+    output$download1 <- downloadHandler(
+        filename = 
+            function() {
+            paste(str_sub(input$file1,1,-5), ".csv", sep = "")
+        }
+        ,
+        content = function(file) {
+            write.csv(cleaned_data(), file, row.names = FALSE)
+        }
+    )
     
 }
 

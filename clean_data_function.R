@@ -1,4 +1,7 @@
 clean_txt <- function(txt_input) {
+  #start time of function
+  start_time <- Sys.time()
+  
   not_any_na <- function(x) all(!is.na(x))
   # not_any_blank <- function(x) all()
   # making new df for just the NCD and EFA columns
@@ -47,6 +50,10 @@ clean_txt <- function(txt_input) {
   }
   
   newdf2 <- newdf[2:nrow(newdf),]
+  
+  #how long is takes
+  end_time <- Sys.time()
+  print(end_time-start_time)
   
   return(newdf2)
 }
