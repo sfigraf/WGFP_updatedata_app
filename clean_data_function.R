@@ -51,6 +51,8 @@ clean_txt <- function(txt_input) {
   
   newdf2 <- newdf[2:nrow(newdf),]
   
+  newdf2$DTY <- as_date(ymd(newdf2$DTY))
+  
   #how long is takes
   end_time <- Sys.time()
   print(end_time-start_time)

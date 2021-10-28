@@ -192,3 +192,27 @@ if (length(c1)==11){
 }
 
 clean_txt(x)
+
+
+# combining dfs -----------------------------------------------------------
+
+new_data <- read.delim("RB\\CR_RB_A2_20210729.txt", sep = " ", na.strings=c("", "NA"),
+                #skip = 4, 
+                header= FALSE
+                #col.names = c("Code",DTY","ARR", "TRF","DUR","TTY","TAG","SCD","ANT","NCD","EFA")
+)
+
+new_data1 <- clean_txt(new_data)
+new_data1$DTY <- as_date(ymd(new_data1$DTY))
+
+previous_data <- read.csv("WGFP_Raw_20210505.csv")
+previous_data = previous_data[,-1]
+previous_data %>%
+  mutate(DTY <- mdy(DTY))
+
+previous_data$DTY <- mdy(previous_data$DTY)
+
+new_x <- bind_rows(previous_data,new_data1)
+
+#new_x$DTY <- as_date(mdy(new_x$DTY))
+write.csv(new_x, "test2.csv")
