@@ -1,43 +1,42 @@
 library(shiny)
+#library(data.table)
 library(tidyverse)
 library(lubridate)
+library(shinycssloaders)
 library(DT)
 
 #changes max upload size to 30 mb
-options(shiny.maxRequestSize=30*1024^2)
+options(shiny.maxRequestSize=60*1024^2)
+
 #brings in data cleaning function
 source("clean_data_function.R")
 
-#bringing in previous data to view
-previous_detections <- read.csv("WGFP_Raw_20210505.csv")
-previous_detections = previous_detections[,-1]
-previous_detections$DTY <- mdy(previous_detections$DTY)
 
 ui <- fluidPage(
     titlePanel("WGFP Data Uploads"),
     sidebarLayout(
         sidebarPanel(
-            fileInput("file1", "Choose File",
-                      # accept = c(
-                      #     "text/csv",
-                      #     "text/comma-separated-values,text/plain",
-                      #     ".csv")
-            ),
-            tags$hr(),
-            #checkboxInput("header", "Header", TRUE),
+            
+            fileInput("file1", "Choose New Detection File"),
+            
+            fileInput("file2", "Choose Previous data File"),
+            
+            # once new detection file is uploaded, this panel appears
             conditionalPanel(condition = "output.fileUploaded == true",
-                             downloadButton(outputId = "download1", label = "Save as CSV"),
-                             downloadButton(outputId = "download2", label = "Add to Master File")
+                             downloadButton(outputId = "download1", label = "Save New Detections as CSV"),
+                             tags$hr(),
+                             downloadButton(outputId = "download2", label = "Save Combined Data")
                              ) #end of conditional panel
-        ),
+        ), #end of sidebar
         mainPanel(tabsetPanel(
             tabPanel("How to Use",
                      includeHTML(paste0("www/", "WGFP_data_uploads_about.html"))),
             tabPanel("New Detections",
-                     DT::dataTableOutput("new_data_contents")),
-            tags$hr(),
+                     withSpinner(DT::dataTableOutput("new_data_contents"))),
             tabPanel("Previous Detections",
-                     DT::dataTableOutput("previousdata"))
+                     withSpinner(DT::dataTableOutput("previousdata"))),
+            tabPanel("Combined Data",
+                     withSpinner(DT::dataTableOutput("combineddata")))
             
             
         ), #end of tabset panel
@@ -62,6 +61,7 @@ server <- function(input, output) {
         read.delim(inFile$datapath, sep = " ", na.strings=c("", "NA"),
                    #skip = 5,
                    header= FALSE)    })
+    
     #makes a fileUploaded output option to return back to conditional panel for saving csv
     output$fileUploaded <- reactive({
         return(!is.null(new_data()))
@@ -69,24 +69,35 @@ server <- function(input, output) {
     
     outputOptions(output, 'fileUploaded', suspendWhenHidden=FALSE)
     
+    #brings in clean_txt function and cleans .txt file jumble
     cleaned_data <- reactive({
         clean_txt(new_data())
     })
     
+    #displays new cleaned data
     output$new_data_contents <- renderDataTable({
         cleaned_data()
     })
+    
+    # Uploading Previous Detections
     ##  Error in <Anonymous>: 'data' must be 2-dimensional (e.g. data frame or matrix)
-    #solved by doing date data wrangling outside of a reactive context
+    #solved by doing date data wrangling outside of a reactive context. ie in a function. Now that all CSV 
     previous_detections1 <- reactive({
-        previous_detections
-
+        inFile <- input$file2
+        
+        if (is.null(inFile))
+            return(NULL)
+        #brings in uploaded file with all columns as characters except DTY column
+        previous_detections <- read_csv(inFile$datapath, col_types = "cDccccccccc")
+        
     })
     
     output$previousdata <- renderDataTable({
         
         previous_detections1()
     })
+    
+    
     
 
 # Downloading CSV ---------------------------------------------------------
@@ -97,7 +108,9 @@ server <- function(input, output) {
         }
         ,
         content = function(file) {
-            write.csv(cleaned_data(), file, row.names = FALSE)
+            write_csv(cleaned_data(), file)
+            
+            
         }
     )
     
@@ -108,10 +121,14 @@ server <- function(input, output) {
         
     })
     
+    output$combineddata <- renderDataTable({
+        
+        updated_data()
+    })
+    # Saving New Combined File
     
     output$download2 <- downloadHandler(
         
-       
         
         filename = 
             function() {
@@ -119,16 +136,12 @@ server <- function(input, output) {
             }
         ,
         content = function(file) {
-            write.csv(updated_data(), file, row.names = FALSE)
+            write_csv(updated_data(), file,  progress = TRUE)
         }
     )
     
     
     
-    # observeEvent(input$button1, {
-    #     updated_data <- bind_rows(previous_detections1(),cleaned_data())
-    #     
-    # })    
     
 }
 
