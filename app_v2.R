@@ -66,12 +66,16 @@ server <- function(input, output) {
                        #skip = 5,
                        header= FALSE)
             #cleans txt file if it is a txt file that was uploaded
-            clean_txt(x)
+            return(clean_txt(x))
             
 
         } else if (endsWith(inFile$name, ".xlsx")) {
             #reads excel file if it was a excel file
-            read_excel(inFile$datapath, sheet = "Downloaded Tag IDs")
+            biomark <- read_excel(inFile$datapath, sheet = "Downloaded Tag IDs")
+            biomark$`Scan Date` <- as_date(mdy(biomark$`Scan Date`))
+            #Error in <Anonymous>: 'data' must be 2-dimensional (e.g. data frame or matrix)
+            #solved by wrapping biomark in return statement
+            return(biomark)
             
         }
          
@@ -104,7 +108,7 @@ server <- function(input, output) {
         if (str_detect(inFile, "WGFP")) {
             previous_detections <- read_csv(inFile$datapath, col_types = "cDccccccccc")
         } else if (str_detect(inFile, "Biomark")) {
-            previous_detections <- read_csv(inFile$datapath, col_types = "ccccccccccc")
+            previous_detections <- read_csv(inFile$datapath, col_types = "Dcccccccccc")
 
         }
         
@@ -150,7 +154,14 @@ server <- function(input, output) {
         
         filename = 
             function() {
-                paste("WGFP_Raw", str_sub(input$file1,-13,-5), ".csv", sep = "")
+                inFile <- input$file1
+                if (endsWith(inFile$name, ".TXT")) {
+                    paste("WGFP_Raw", str_sub(inFile,-13,-5), ".csv", sep = "")
+                    
+                } else if (endsWith(inFile$name, ".xlsx")) {
+                    paste("Biomark_Raw", str_sub(inFile,-14,-6), ".csv", sep = "")
+                    
+                }
             }
         ,
         content = function(file) {
