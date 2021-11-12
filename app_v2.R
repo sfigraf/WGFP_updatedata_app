@@ -1,11 +1,12 @@
 library(shiny)
 #library(data.table)
 library(tidyverse)
+library(readxl)
 library(lubridate)
 library(shinycssloaders)
 library(DT)
 
-#changes max upload size to 30 mb
+#changes max upload size to 60 mb
 options(shiny.maxRequestSize=60*1024^2)
 
 #brings in data cleaning function
@@ -26,7 +27,7 @@ ui <- fluidPage(
                              downloadButton(outputId = "download1", label = "Save New Detections as CSV"),
                              tags$hr(),
                              downloadButton(outputId = "download2", label = "Save Combined Data")
-                             ) #end of conditional panel
+            ) #end of conditional panel
         ), #end of sidebar
         mainPanel(tabsetPanel(
             tabPanel("How to Use",
@@ -40,39 +41,54 @@ ui <- fluidPage(
             
             
         ), #end of tabset panel
-            
+        
         ) #end of main panel
     )
 )
 
 server <- function(input, output) {
     
-    new_data <- reactive({
+    cleaned_data <- reactive({
         # input$file1 will be NULL initially. After the user selects
         # and uploads a file, it will be a data frame with 'name',
         # 'size', 'type', and 'datapath' columns. The 'datapath'
         # column will contain the local filenames where the data can
         # be found.
         inFile <- input$file1
+        print(inFile$name)
         
         if (is.null(inFile))
             return(NULL)
         
-        read.delim(inFile$datapath, sep = " ", na.strings=c("", "NA"),
-                   #skip = 5,
-                   header= FALSE)    })
+        if (endsWith(inFile$name, ".TXT")) {
+            print(TRUE)
+            x <- read.delim(inFile$datapath, sep = " ", na.strings=c("", "NA"),
+                       #skip = 5,
+                       header= FALSE)
+            #cleans txt file if it is a txt file that was uploaded
+            clean_txt(x)
+            
+
+        } else if (endsWith(inFile$name, ".xlsx")) {
+            #reads excel file if it was a excel file
+            read_excel(inFile$datapath, sheet = "Downloaded Tag IDs")
+            
+        }
+         
+        })
     
     #makes a fileUploaded output option to return back to conditional panel for saving csv
     output$fileUploaded <- reactive({
-        return(!is.null(new_data()))
+        return(!is.null(cleaned_data()))
     })
     
     outputOptions(output, 'fileUploaded', suspendWhenHidden=FALSE)
     
     #brings in clean_txt function and cleans .txt file jumble
-    cleaned_data <- reactive({
-        clean_txt(new_data())
-    })
+    
+    # cleaned_data <- reactive({
+    #     clean_txt(new_data())
+    # })
     
     #displays new cleaned data
     output$new_data_contents <- renderDataTable({
@@ -88,7 +104,13 @@ server <- function(input, output) {
         if (is.null(inFile))
             return(NULL)
         #brings in uploaded file with all columns as characters except DTY column
-        previous_detections <- read_csv(inFile$datapath, col_types = "cDccccccccc")
+        
+        if (str_detect(inFile, "WGFP")) {
+            previous_detections <- read_csv(inFile$datapath, col_types = "cDccccccccc")
+        } else if (str_detect(inFile, "Biomark")) {
+            previous_detections <- read_csv(inFile$datapath, col_types = "ccccccccccc")
+            
+        }
         
     })
     
@@ -99,13 +121,13 @@ server <- function(input, output) {
     
     
     
-
-# Downloading CSV ---------------------------------------------------------
+    
+    # Downloading CSV ---------------------------------------------------------
     output$download1 <- downloadHandler(
         filename = 
             function() {
-            paste(str_sub(input$file1,1,-5), ".csv", sep = "")
-        }
+                paste(str_sub(input$file1,1,-5), ".csv", sep = "")
+            }
         ,
         content = function(file) {
             write_csv(cleaned_data(), file)
@@ -114,8 +136,8 @@ server <- function(input, output) {
         }
     )
     
-
-# Combining Files ---------------------------------------------------------
+    
+    # Combining Files ---------------------------------------------------------
     updated_data <- reactive({
         new_x <- bind_rows(previous_detections1(),cleaned_data())
         
