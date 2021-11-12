@@ -55,13 +55,13 @@ server <- function(input, output) {
         # column will contain the local filenames where the data can
         # be found.
         inFile <- input$file1
-        print(inFile$name)
+        #print(inFile$name)
         
         if (is.null(inFile))
             return(NULL)
-        
+        # if file ends with .txt, it gets cleaned. if it's a biomark one ending in .xlsx, it just gets brought in 
         if (endsWith(inFile$name, ".TXT")) {
-            print(TRUE)
+            # print(TRUE)
             x <- read.delim(inFile$datapath, sep = " ", na.strings=c("", "NA"),
                        #skip = 5,
                        header= FALSE)
@@ -84,11 +84,7 @@ server <- function(input, output) {
     
     outputOptions(output, 'fileUploaded', suspendWhenHidden=FALSE)
     
-    #brings in clean_txt function and cleans .txt file jumble
     
-    # cleaned_data <- reactive({
-    #     clean_txt(new_data())
-    # })
     
     #displays new cleaned data
     output$new_data_contents <- renderDataTable({
@@ -109,7 +105,7 @@ server <- function(input, output) {
             previous_detections <- read_csv(inFile$datapath, col_types = "cDccccccccc")
         } else if (str_detect(inFile, "Biomark")) {
             previous_detections <- read_csv(inFile$datapath, col_types = "ccccccccccc")
-            
+
         }
         
     })
