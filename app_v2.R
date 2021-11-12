@@ -5,6 +5,8 @@ library(readxl)
 library(lubridate)
 library(shinycssloaders)
 library(DT)
+## Idea: make variable at beginning for infIle1 and inFile2 showing biomark vs WGFP then 
+# incorporate that variable in all the If statements so the code is just more concise
 
 #changes max upload size to 60 mb
 options(shiny.maxRequestSize=60*1024^2)
