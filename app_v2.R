@@ -8,8 +8,8 @@ library(DT)
 ## Idea: make variable at beginning for infIle1 and inFile2 showing biomark vs WGFP then 
 # incorporate that variable in all the If statements so the code is just more concise
 
-#changes max upload size to 60 mb
-options(shiny.maxRequestSize=60*1024^2)
+#changes max upload size to 600 mb
+options(shiny.maxRequestSize=600*1024^2)
 
 #brings in data cleaning function
 source("clean_data_function.R")
@@ -78,6 +78,15 @@ server <- function(input, output) {
             #Error in <Anonymous>: 'data' must be 2-dimensional (e.g. data frame or matrix)
             #solved by wrapping biomark in return statement
             return(biomark)
+            
+        }
+        
+        else if (endsWith(inFile$name, ".csv")) {
+            #reads csv if it was a previously cleaned stationary csv 
+            cleaned_stationary <- read_csv(inFile$datapath, col_types = "cDccccccccc")
+            #biomark$`Scan Date` <- as_date(mdy(biomark$`Scan Date`))
+            
+            return(cleaned_stationary)
             
         }
          
@@ -157,7 +166,7 @@ server <- function(input, output) {
         filename = 
             function() {
                 inFile <- input$file1
-                if (endsWith(inFile$name, ".TXT")) {
+                if (endsWith(inFile$name, ".TXT") | endsWith(inFile$name, ".csv")) {
                     paste("WGFP_Raw", str_sub(inFile,-13,-5), ".csv", sep = "")
                     
                 } else if (endsWith(inFile$name, ".xlsx")) {
