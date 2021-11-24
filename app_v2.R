@@ -115,13 +115,13 @@ server <- function(input, output) {
         if (is.null(inFile))
             return(NULL)
         #brings in uploaded file with all columns as characters except DTY column
-        
-        if (str_detect(inFile, "WGFP")) {
-            previous_detections <- read_csv(inFile$datapath, col_types = "cDccccccccc")
-        } else if (str_detect(inFile, "Biomark")) {
+        ## Parsing error with Dates in Biomark File solved jst by re-adding the last B1 and B2 detection files
+        if (str_detect(inFile, "Biomark")) {
             previous_detections <- read_csv(inFile$datapath, col_types = "Dcccccccccc")
-
+        } else { #if it's not a bioark file, then it has to be related to Stationary stuff so it will be brought in this way
+            previous_detections <- read_csv(inFile$datapath, col_types = "cDccccccccc")
         }
+        
         
     })
     

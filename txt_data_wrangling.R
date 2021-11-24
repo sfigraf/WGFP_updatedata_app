@@ -218,3 +218,11 @@ previous_data$DTY <- as_date(mdy(previous_data$DTY))
 
 #new_x$DTY <- as_date(mdy(new_x$DTY))
 write_csv(previous_data, "WGFP_Raw_20210505_3.csv")
+
+
+previous_detections <- read_csv("Biomark_Raw_20211109_2.csv", col_types = "Dcccccccccc")
+
+previous_detections <- previous_detections %>%
+  filter(`Scan Date` >= as.Date("2020-08-01"))
+
+write_csv(previous_detections, "Biomark_Raw_20211109_3.csv")
