@@ -2,7 +2,7 @@ clean_txt <- function(txt_input) {
   #start time of function
   start_time <- Sys.time()
   
-  #function resturning vector that has no NA
+  #function returning vector that has no NA
   not_any_na <- function(x) all(!is.na(x))
   # not_any_blank <- function(x) all()
   
@@ -52,8 +52,8 @@ clean_txt <- function(txt_input) {
   newdf2 <- newdf[2:nrow(newdf),]
   
   #newdf2$TAG <- as.numeric(newdf2$TAG)
-  # making DTY column date so when it gets used in Shiny app, it can be sorted chronologically.
-  newdf2$DTY <- as_date(ymd(newdf2$DTY))
+  # keeping DTY as character because .txt file DTY comes off in yyyymmdd format anyway which can be sorted chronologically -SG 20220118
+  #newdf2$DTY <- as_date(ymd(newdf2$DTY))
   
   #how long the process takes
   # won't display on-screen if the app is deployed but displays on console

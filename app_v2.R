@@ -83,7 +83,11 @@ server <- function(input, output) {
         
         else if (endsWith(inFile$name, ".csv")) {
             #reads csv if it was a previously cleaned stationary csv 
-            cleaned_stationary <- read_csv(inFile$datapath, col_types = "cDccccccccc")
+            cleaned_stationary <- read_csv(inFile$datapath, col_types = "ccccccccccc")
+            cleaned_stationary <- cleaned_stationary %>%
+                mutate(DTY = ifelse(str_detect(DTY, "/"), 
+                                    as.character(mdy(DTY)), 
+                                    DTY))
             #biomark$`Scan Date` <- as_date(mdy(biomark$`Scan Date`))
             
             return(cleaned_stationary)
@@ -118,8 +122,12 @@ server <- function(input, output) {
         ## Parsing error with Dates in Biomark File solved jst by re-adding the last B1 and B2 detection files
         if (str_detect(inFile, "Biomark")) {
             previous_detections <- read_csv(inFile$datapath, col_types = "Dcccccccccc")
-        } else { #if it's not a bioark file, then it has to be related to Stationary stuff so it will be brought in this way
-            previous_detections <- read_csv(inFile$datapath, col_types = "cDccccccccc")
+        } else { #if it's not a biomark file, then it has to be related to Stationary stuff so it will be brought in this way
+            previous_detections <- read_csv(inFile$datapath, col_types = "ccccccccccc")
+            previous_detections <- previous_detections %>%
+                mutate(DTY = ifelse(str_detect(DTY, "/"), 
+                                    as.character(mdy(DTY)), 
+                                    DTY))
         }
         
         

@@ -1,4 +1,5 @@
 library(tidyverse)
+library(readxl)
 #skips the unnecessary part of the txt file, registers columsn separated by spaces, turns blank entries into NA's (important for later), and doesn't include any column names
 x <- read.delim("RB\\CR_RB_A2_20210729.txt", sep = " ", na.strings=c("", "NA"),skip = 4, header= FALSE
                 #col.names = c("Code",DTY","ARR", "TRF","DUR","TTY","TAG","SCD","ANT","NCD","EFA")
@@ -192,8 +193,21 @@ if (length(c1)==11){
 }
 
 clean_txt(x)
+# Biomark
 
-
+biomark <- read_excel("CR_WG_B1_20210916.xlsx", sheet = "Downloaded Tag IDs")
+colnames(biomark)
+biomark1 <- biomark %>%
+  mutate(Scan.Time = hms(`Scan Time`),
+         `Scan Time` = str_sub(`Scan Time`, 1, -5))
+write.csv(biomark, "test11.csv")
+b <- read.csv("test1.csv", dec = ",")
+b1 <- read.csv(file.choose(), dec = ",")
+b1 <- b1 %>%
+  mutate(time1 = hms(Scan.Time))
+x <- hms(b1$Scan.Time)
+biomark1 <- read_csv("test1.csv", dec = ",")
+# , colClasses=c("character", "Date", rep("character",12))
 # combining dfs -----------------------------------------------------------
 
 new_data <- read.delim("RB\\CR_RB_A2_20210729.txt", sep = " ", na.strings=c("", "NA"),
@@ -226,3 +240,7 @@ previous_detections <- previous_detections %>%
   filter(`Scan Date` >= as.Date("2020-08-01"))
 
 write_csv(previous_detections, "Biomark_Raw_20211109_3.csv")
+
+CR_RB_A2_20220110 <- read_csv("CR_RB_A2_20220110.csv")
+#
+cleaned_stationary <- read_csv("CR_RB_A2_20220110.csv", col_types = "cDccccccccc")
