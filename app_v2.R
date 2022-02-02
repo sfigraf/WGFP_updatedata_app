@@ -5,6 +5,7 @@ library(readxl)
 library(lubridate)
 library(shinycssloaders)
 library(DT)
+library(plotly)
 ## Idea: make variable at beginning for infIle1 and inFile2 showing biomark vs WGFP then 
 # incorporate that variable in all the If statements so the code is just more concise
 
@@ -39,7 +40,11 @@ ui <- fluidPage(
             tabPanel("Previous Detections",
                      withSpinner(DT::dataTableOutput("previousdata"))),
             tabPanel("Combined Data",
-                     withSpinner(DT::dataTableOutput("combineddata")))
+                     withSpinner(DT::dataTableOutput("combineddata"))),
+            tabPanel("QAQC ",
+                     withSpinner(DT::dataTableOutput("problem_times")),
+                     withSpinner(plotlyOutput("plot1")), #newdatamarkertagPlot
+                     withSpinner(plotlyOutput("plot2"))) #combined data hourly marker tags
             
             
         ), #end of tabset panel
@@ -96,6 +101,7 @@ server <- function(input, output) {
          
         })
     
+    
     #makes a fileUploaded output option to return back to conditional panel for saving csv
     output$fileUploaded <- reactive({
         return(!is.null(cleaned_data()))
@@ -137,6 +143,142 @@ server <- function(input, output) {
         
         previous_detections1()
     })
+    
+
+# Plot Marker Reactives ---------------------------------------------------
+
+    plot_ready_new_data <- reactive({
+        
+        #returns a file of only marker tags for QAQC hourly plot
+        
+        inFile <- input$file1
+        
+        if (is.null(inFile))
+            return(NULL)
+        #brings in uploaded file with all columns as characters except DTY column
+        ## Parsing error with Dates in Biomark File solved jst by re-adding the last B1 and B2 detection files
+        if (endsWith(inFile$name, ".TXT") | endsWith(inFile$name, ".csv"))  {
+            cleaned_new_time_data <- cleaned_data() %>%
+                filter(
+                    str_detect(TAG, "^0000_0000000")
+                ) %>%
+                #this is the same process that all_detections goes through
+                mutate(Scan_Time1 = case_when(str_detect(ARR, "AM") & str_detect(ARR, "^12:") ~ hms(ARR) - hours(12),
+                                              str_detect(ARR, "PM") & str_detect(ARR, "^12:") ~ hms(ARR),
+                                              
+                                              str_detect(ARR, "AM") & str_detect(ARR, "^12:", negate = TRUE) ~ hms(ARR),
+                                              str_detect(ARR, "PM") & str_detect(ARR, "^12:", negate = TRUE) ~ hms(ARR) + hours(12),
+                                              #if it doesn't detect PM or AM just do hms(ARR)
+                                              str_detect(ARR, "PM|AM") == FALSE ~ hms(ARR)),
+                       Scan_Time2 = as.character(as_datetime(Scan_Time1)), 
+                       CleanARR = str_trim(str_sub(Scan_Time2, start = 11, end = -1))
+                ) %>%
+                
+                select(Code, DTY, ARR, CleanARR, TRF, DUR, TTY, TAG, SCD, ANT, NCD, EFA)
+            
+            cleaned_new_time_data1 <- cleaned_new_time_data %>%
+                mutate(hour1 = hour(as_datetime(paste(DTY, CleanARR)))) 
+                
+        } else if (endsWith(inFile$name, ".xlsx")) { 
+            new_biomark1 <- cleaned_data() %>%
+                filter(str_detect(`DEC Tag ID`, "^999")) %>%
+                mutate(hour1 = hour(as_datetime(paste(`Scan Date`, `Scan Time`)))) %>%
+                rename(SCD = `Reader ID`)
+        }
+    })
+    
+    plot_ready_previous_data <- reactive({
+        
+        inFile <- input$file2
+        
+        if (is.null(inFile))
+            return(NULL)
+        #brings in uploaded file with all columns as characters except DTY column
+        ## Parsing error with Dates in Biomark File solved jst by re-adding the last B1 and B2 detection files
+        if (str_detect(inFile, "Biomark")) {
+            
+            problem_times11 <- previous_detections1() %>%
+                filter(str_length(`Scan Time`) < 8) %>%
+                mutate(month111 = month(`Scan Date`)) 
+            
+            previous_detections2 <- Biomark_Raw_1 %>%
+                distinct(.keep_all = TRUE) %>%
+                mutate(hour1 = hour(as_datetime(paste(`Scan Date`, `Scan Time`)))) %>%
+                filter(
+                    str_detect(`DEC Tag ID`, "^999")
+                ) %>%
+                rename(SCD = `Reader ID`)
+            
+        } else { #if it's not a biomark file, then it has to be related to Stationary stuff
+            problem_times11 <- previous_detections1() %>%
+                filter(str_length(ARR) < 8) %>%
+                mutate(month111 = month(DTY)) 
+            
+            #filters to get just marker tags then corrects ARR time
+            previous_detections2 <- previous_detections1() %>%
+                filter(
+                    str_detect(TAG, "^0000_0000000")
+                ) %>%
+                #this is the same process that all_detections goes through
+                mutate(Scan_Time1 = case_when(str_detect(ARR, "AM") & str_detect(ARR, "^12:") ~ hms(ARR) - hours(12),
+                                              str_detect(ARR, "PM") & str_detect(ARR, "^12:") ~ hms(ARR),
+                                              
+                                              str_detect(ARR, "AM") & str_detect(ARR, "^12:", negate = TRUE) ~ hms(ARR),
+                                              str_detect(ARR, "PM") & str_detect(ARR, "^12:", negate = TRUE) ~ hms(ARR) + hours(12),
+                                              #if it doesn't detect PM or AM just do hms(ARR)
+                                              str_detect(ARR, "PM|AM") == FALSE ~ hms(ARR)),
+                       Scan_Time2 = as.character(as_datetime(Scan_Time1)), 
+                       CleanARR = str_trim(str_sub(Scan_Time2, start = 11, end = -1))
+                ) %>%
+                
+                select(Code, DTY, ARR, CleanARR, TRF, DUR, TTY, TAG, SCD, ANT, NCD, EFA)
+            
+            previous_detections2 <- previous_detections2 %>%
+                mutate(hour1 = hour(as_datetime(paste(DTY, CleanARR))))
+        }
+        
+        previous_det_list <- list(
+            "problem_times" = problem_times11,
+            "plotready_prev" = previous_detections2
+        )
+        
+        return(previous_det_list)
+        
+            
+    })
+    
+    output$problem_times <- renderDT({
+        datatable(plot_ready_previous_data()$problem_times,
+                  caption = h4("Problem Times: Previous Detections") )
+    })
+    
+    
+# PlotOutputs -------------------------------------------------------------
+
+    
+    output$plot1 <- renderPlotly({
+        Markers_only_new <- plot_ready_new_data() %>%
+            ggplot(aes(x = hour1, fill = SCD)) +
+            geom_bar(stat = "Count") +
+            theme_classic() +
+            labs(title = "Hourly Marker Tags by Site: New Detections", 
+                 x = "Hour of Day")
+        
+        
+        ggplotly(Markers_only_new)
+    })    
+    output$plot2 <- renderPlotly({
+        Markers_only_previous <- plot_ready_previous_data()$plotready_prev %>%
+            
+            ggplot(aes(x = hour1, fill = SCD, text = as.character(hour1))) +
+            geom_bar(stat = "Count") +
+            theme_classic() +
+            labs(title = "Hourly Marker Tags by Site: Previous Detections", 
+                 x = "Hour of Day")
+        
+        
+        ggplotly(Markers_only_previous)
+    })    
     
     
     
