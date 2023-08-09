@@ -62,18 +62,19 @@ server <- function(input, output) {
         # column will contain the local filenames where the data can
         # be found.
         inFile <- input$file1
-        #print(inFile$name)
+        
         
         if (is.null(inFile))
             return(NULL)
         # if file ends with .txt, it gets cleaned. if it's a biomark one ending in .xlsx, it just gets brought in 
         if (endsWith(inFile$name, ".TXT")) {
             # print(TRUE)
-            x <- read.delim(inFile$datapath, sep = " ", na.strings=c("", "NA"),
+            new_stationaryFile <- read.delim(inFile$datapath, sep = " ", na.strings=c("", "NA"),
                        #skip = 5,
                        header= FALSE)
             #cleans txt file if it is a txt file that was uploaded
-            return(clean_txt(x))
+            
+            return(clean_txt(new_stationaryFile))
             
 
         } else if (endsWith(inFile$name, ".xlsx")) {
@@ -126,15 +127,18 @@ server <- function(input, output) {
             return(NULL)
         #brings in uploaded file with all columns as characters except DTY column
         ## Parsing error with Dates in Biomark File solved jst by re-adding the last B1 and B2 detection files
-        if (str_detect(inFile, "Biomark")) {
+        if (grepl("Biomark", inFile$name)) { #(str_detect(inFile, "Biomark"))
             previous_detections <- read_csv(inFile$datapath, col_types = "Dcccccccccc")
-        } else { #if it's not a biomark file, then it has to be related to Stationary stuff so it will be brought in this way
-            previous_detections <- read_csv(inFile$datapath, col_types = "ccccccccccc")
-            previous_detections <- previous_detections %>%
-                mutate(DTY = ifelse(str_detect(DTY, "/"), 
-                                    as.character(mdy(DTY)), 
-                                    DTY))
+        } else if (str_detect(inFile$name, "WGFP|Stationary")) { #if it's not a biomark file, then it has to be related to Stationary stuff so it will be brought in this way
+          print("stationary")  
+          previous_detections <- readRDS(inFile$datapath) #, col_types = "ccccccccccc"
+            previous_detections$EFA <- as.character(previous_detections$EFA)
+            # previous_detections <- previous_detections %>%
+            #     mutate(DTY = ifelse(str_detect(DTY, "/"), 
+            #                         as.character(mdy(DTY)), 
+            #                         DTY))
         }
+        return(previous_detections)
         
         
     })
@@ -195,13 +199,13 @@ server <- function(input, output) {
             return(NULL)
         #brings in uploaded file with all columns as characters except DTY column
         ## Parsing error with Dates in Biomark File solved jst by re-adding the last B1 and B2 detection files
-        if (str_detect(inFile, "Biomark")) {
+        if (str_detect(inFile$name, "Biomark")) {
             
             problem_times11 <- previous_detections1() %>%
                 filter(str_length(`Scan Time`) < 8) %>%
                 mutate(month111 = month(`Scan Date`)) 
-            
-            previous_detections2 <- Biomark_Raw_1 %>%
+            # this is a marker tag file
+            previous_detections2 <- previous_detections1() %>%
                 distinct(.keep_all = TRUE) %>%
                 mutate(hour1 = hour(as_datetime(paste(`Scan Date`, `Scan Time`)))) %>%
                 filter(
@@ -209,7 +213,7 @@ server <- function(input, output) {
                 ) %>%
                 rename(SCD = `Reader ID`)
             
-        } else { #if it's not a biomark file, then it has to be related to Stationary stuff
+        } else if (str_detect(inFile$name, "WGFP")) { #if it's not a biomark file, then it has to be related to Stationary stuff
             problem_times11 <- previous_detections1() %>%
                 filter(str_length(ARR) < 8) %>%
                 mutate(month111 = month(DTY)) 
@@ -249,35 +253,59 @@ server <- function(input, output) {
     
     output$problem_times <- renderDT({
         datatable(plot_ready_previous_data()$problem_times,
-                  caption = h4("Problem Times: Previous Detections") )
+                  caption = h4("Problem Times: Previous Detections, Time got read in wrong (number of characters in string under 8)") )
     })
     
     
 # PlotOutputs -------------------------------------------------------------
 
-    
+    #QAQC new detections
     output$plot1 <- renderPlotly({
+      if(is.null(plot_ready_new_data())){
+        emptydf <- data.frame(X = c(0,1), Y = c(0,1))
+        emptydf %>%
+          ggplot(aes(x = X)) +
+          
+          theme_classic() +
+          labs(title = "Empty Plot: No New Detections Uploaded" 
+               )
+        
+      } else {
         Markers_only_new <- plot_ready_new_data() %>%
-            ggplot(aes(x = hour1, fill = SCD)) +
-            geom_bar(stat = "Count") +
-            theme_classic() +
-            labs(title = "Hourly Marker Tags by Site: New Detections", 
-                 x = "Hour of Day")
+          ggplot(aes(x = hour1, fill = SCD)) +
+          geom_bar(stat = "Count") +
+          theme_classic() +
+          labs(title = "Hourly Marker Tags by Site: New Detections", 
+               x = "Hour of Day")
         
         
         ggplotly(Markers_only_new)
+      }
+        
     })    
+    #QAQC Previos detections
     output$plot2 <- renderPlotly({
+      if(is.null( plot_ready_previous_data()$plotready_prev)){
+        emptydf <- data.frame(X = c(0,1), Y = c(0,1))
+        emptydf %>%
+          ggplot(aes(x = X)) +
+          theme_classic() +
+          labs(title = "Empty Plot: No Previous Detections Uploaded" 
+          )
+        
+      } else {
         Markers_only_previous <- plot_ready_previous_data()$plotready_prev %>%
-            
-            ggplot(aes(x = hour1, fill = SCD, text = as.character(hour1))) +
-            geom_bar(stat = "Count") +
-            theme_classic() +
-            labs(title = "Hourly Marker Tags by Site: Previous Detections", 
-                 x = "Hour of Day")
+          
+          ggplot(aes(x = hour1, fill = SCD, text = as.character(hour1))) +
+          geom_bar(stat = "Count") +
+          theme_classic() +
+          labs(title = "Hourly Marker Tags by Site: Previous Detections", 
+               x = "Hour of Day")
         
         
         ggplotly(Markers_only_previous)
+      }
+        
     })    
     
     
