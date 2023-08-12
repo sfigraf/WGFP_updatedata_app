@@ -130,7 +130,7 @@ server <- function(input, output) {
         if (grepl("Biomark", inFile$name)) { #(str_detect(inFile, "Biomark"))
             previous_detections <- read_csv(inFile$datapath, col_types = "Dcccccccccc")
         } else if (str_detect(inFile$name, "WGFP|Stationary")) { #if it's not a biomark file, then it has to be related to Stationary stuff so it will be brought in this way
-          print("stationary")  
+            
           previous_detections <- readRDS(inFile$datapath) #, col_types = "ccccccccccc"
             previous_detections$EFA <- as.character(previous_detections$EFA)
             # previous_detections <- previous_detections %>%
@@ -253,7 +253,7 @@ server <- function(input, output) {
     
     output$problem_times <- renderDT({
         datatable(plot_ready_previous_data()$problem_times,
-                  caption = h4("Problem Times: Previous Detections, Time got read in wrong (number of characters in string under 8)") )
+                  caption = h4("Problem Times: Previous Detections, Time got read in wrong (number of characters in string under 8). This is a good thing if this df is empty") )
     })
     
     
@@ -328,12 +328,17 @@ server <- function(input, output) {
     
     # Combining Files ---------------------------------------------------------
     updated_data <- reactive({
-        new_x <- bind_rows(previous_detections1(),cleaned_data())
+        combinedDetections <- bind_rows(previous_detections1(), cleaned_data())
+        combinedDetections$EFA <- as.numeric(combinedDetections$EFA)
+        #delete duplicate rows
+        combinedDetections <- combinedDetections %>%
+          distinct()
+        return(combinedDetections)
         
     })
     
     output$combineddata <- renderDataTable({
-        
+      
         updated_data()
     })
     # Saving New Combined File
@@ -345,7 +350,7 @@ server <- function(input, output) {
             function() {
                 inFile <- input$file1
                 if (endsWith(inFile$name, ".TXT") | endsWith(inFile$name, ".csv")) {
-                    paste("WGFP_Raw", str_sub(inFile,-13,-5), ".csv", sep = "")
+                    paste("WGFP_Raw", str_sub(inFile,-13,-5), ".rds", sep = "")
                     
                 } else if (endsWith(inFile$name, ".xlsx")) {
                     paste("Biomark_Raw", str_sub(inFile,-14,-6), ".csv", sep = "")
@@ -354,7 +359,13 @@ server <- function(input, output) {
             }
         ,
         content = function(file) {
+          inFile <- input$file2
+          if(endsWith(inFile$name, ".rds")){
+            
+            saveRDS(updated_data(), file = file)
+          } else if(endsWith(inFile$name, ".csv")){
             write_csv(updated_data(), file,  progress = TRUE)
+          }
         }
     )
     
