@@ -1,0 +1,14 @@
+name: WGFP_CombiningData_RShinyApp
+title: WGFP_CombiningData_RShinyApp
+username:
+account: sfigraf
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5463770
+bundleId: 5536871
+url: https://sfigraf.shinyapps.io/WGFP_CombiningData_RShinyApp/
+when: 1643842517.05759
+lastSyncTime: 1643842517.05759
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .RData|~$w-To- WIP.docx|How-To- WIP.docx|WGFP_Raw_20210505_3.csv
