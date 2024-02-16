@@ -29,9 +29,12 @@ clean_txt <- function(txt_input) {
   for (i in 1:nrow(txt_input)) {
     
     c <- txt_input[i,]
+    #print(c)
     #gets a 1 row df with all columns that aren't NA
     c1 <- c %>%
       select(where(not_any_na)) 
+    
+    
 
     #if the subset wasn't just filled with NA's/had a length ==11, add to newdf 
     # # Error in names(x) <- value : 
@@ -47,7 +50,10 @@ clean_txt <- function(txt_input) {
   }
   
   newdf2 <- newdf[2:nrow(newdf),]
-
+  
+  #newdf2$TAG <- as.numeric(newdf2$TAG)
+  # keeping DTY as character because .txt file DTY comes off in yyyymmdd format anyway which can be sorted chronologically -SG 20220118
+  #newdf2$DTY <- as_date(ymd(newdf2$DTY))
   
   #how long the process takes
   # won't display on-screen if the app is deployed but displays on console
