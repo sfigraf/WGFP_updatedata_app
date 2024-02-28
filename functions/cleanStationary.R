@@ -1,13 +1,14 @@
-#Stationary <- cleaned
+
 cleanStationary <- function(Stationary){
   Stationary <- Stationary %>%
+    #taking out _ and making the dates all the right format yyyy-mm-dd
     mutate(TAG = gsub("\\_", "", str_trim(TAG)), 
            DTY = ifelse(str_detect(DTY, "/"),
                         as.character(mdy(DTY)),
                         DTY)
     )
   
-  #cleaning timestamps for mobile and old stationary detections mainly
+  #cleaning timestamps in case there are some AM/PM stuff; shouldn't be any of this with the way we format but never know
   #currently we are converting to periods so that it is easier to add and subtract intervals
   if (any(grepl("PM|AM", Stationary$ARR))) {
     Stationary_cleanedTime <- Stationary %>%
@@ -29,6 +30,7 @@ cleanStationary <- function(Stationary){
       ) %>%
       select(-c(ARR1, ARR2))
   } else{
+    #just remove decimal place from ARR
     Stationary_cleanedTime <- Stationary %>%
       mutate(ARR = sub("\\.\\d+", "", ARR))
   }

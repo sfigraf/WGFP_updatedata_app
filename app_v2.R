@@ -100,7 +100,6 @@ server <- function(input, output) {
                 mutate(DTY = ifelse(str_detect(DTY, "/"), 
                                     as.character(mdy(DTY)), 
                                     DTY))
-            #biomark$`Scan Date` <- as_date(mdy(biomark$`Scan Date`))
             
             return(cleaned_stationary)
             
@@ -115,7 +114,6 @@ server <- function(input, output) {
     })
     
     outputOptions(output, 'fileUploaded', suspendWhenHidden=FALSE)
-    
     
     
     #displays new cleaned data
@@ -139,10 +137,6 @@ server <- function(input, output) {
             
           previous_detections <- readRDS(inFile$datapath) #, col_types = "ccccccccccc"
             previous_detections$EFA <- as.character(previous_detections$EFA)
-            # previous_detections <- previous_detections %>%
-            #     mutate(DTY = ifelse(str_detect(DTY, "/"), 
-            #                         as.character(mdy(DTY)), 
-            #                         DTY))
         }
         return(previous_detections)
         
@@ -180,20 +174,7 @@ server <- function(input, output) {
             cleaned_new_time_data <- cleaned_data() %>%
                 filter(
                     str_detect(TAG, "^0000000")
-                ) #%>%
-                #this is the same process that all_detections goes through
-                # mutate(Scan_Time1 = case_when(str_detect(ARR, "AM") & str_detect(ARR, "^12:") ~ hms(ARR) - hours(12),
-                #                               str_detect(ARR, "PM") & str_detect(ARR, "^12:") ~ hms(ARR),
-                #                               
-                #                               str_detect(ARR, "AM") & str_detect(ARR, "^12:", negate = TRUE) ~ hms(ARR),
-                #                               str_detect(ARR, "PM") & str_detect(ARR, "^12:", negate = TRUE) ~ hms(ARR) + hours(12),
-                #                               #if it doesn't detect PM or AM just do hms(ARR)
-                #                               str_detect(ARR, "PM|AM") == FALSE ~ hms(ARR)),
-                #        Scan_Time2 = as.character(as_datetime(Scan_Time1)), 
-                #        CleanARR = str_trim(str_sub(Scan_Time2, start = 11, end = -1))
-                # ) %>%
-                # 
-                # select(Code, DTY, ARR, CleanARR, TRF, DUR, TTY, TAG, SCD, ANT, NCD, EFA)
+                ) 
             
             cleaned_new_time_data1 <- cleaned_new_time_data %>%
                 mutate(hour1 = hour(as_datetime(paste(DTY, ARR)))) 
@@ -237,21 +218,7 @@ server <- function(input, output) {
             previous_detections2 <- previous_detections1() %>%
                 filter(
                     str_detect(TAG, "^0000000")
-                ) #%>%
-                # #this is the same process that all_detections goes through
-                # mutate(Scan_Time1 = case_when(str_detect(ARR, "AM") & str_detect(ARR, "^12:") ~ hms(ARR) - hours(12),
-                #                               str_detect(ARR, "PM") & str_detect(ARR, "^12:") ~ hms(ARR),
-                #                               
-                #                               str_detect(ARR, "AM") & str_detect(ARR, "^12:", negate = TRUE) ~ hms(ARR),
-                #                               str_detect(ARR, "PM") & str_detect(ARR, "^12:", negate = TRUE) ~ hms(ARR) + hours(12),
-                #                               #if it doesn't detect PM or AM just do hms(ARR)
-                #                               str_detect(ARR, "PM|AM") == FALSE ~ hms(ARR)),
-                #        Scan_Time2 = as.character(as_datetime(Scan_Time1)), 
-                #        CleanARR = str_trim(str_sub(Scan_Time2, start = 11, end = -1))
-                # ) %>%
-                
-                #select(Code, DTY, ARR, CleanARR, TRF, DUR, TTY, TAG, SCD, ANT, NCD, EFA)
-            
+                )
             previous_detections2 <- previous_detections2 %>%
                 mutate(hour1 = hour(as_datetime(paste(DTY, ARR))))
         }
