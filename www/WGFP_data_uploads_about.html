@@ -21,6 +21,12 @@ Then, choose a new file to upload and re-upload the previously combined WGFP_Raw
 
 <p>
 Older .txt files from the beginning of the project won't currently work because they have different fields than the current fields being used. The current max upload setting is 600 mb. 
+<br>
+<br>
+.Txt files are first parsed out into a df, then it is cleaned before being binded to the previous detection file. This includes taking the decimal off the ARR field, transforming the DTY field to yyy-mm-dd format if needed, removing dates that don't conform to this convention, removing the underscore from the TAG field, removing rows without codes "I" or "S", removing duplicate rows, and removing rows with dates before 2020-08-06. 
+<br>
+<br>
+
 Files are quick to upload but .txt files are automatically cleaned to a viewable, 
 usable form which often takes some time. A 10 mb file should take about 3 mins, depending on processing power. A 30 mb file took 27 minutes. If the new detections file is too large it may not display on the table.
 

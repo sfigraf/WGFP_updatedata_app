@@ -1,4 +1,4 @@
-#cleanStationary
+#Stationary <- cleaned
 cleanStationary <- function(Stationary){
   Stationary <- Stationary %>%
     mutate(TAG = gsub("\\_", "", str_trim(TAG)), 
@@ -30,13 +30,15 @@ cleanStationary <- function(Stationary){
       select(-c(ARR1, ARR2))
   } else{
     Stationary_cleanedTime <- Stationary %>%
-      mutate(ARR = lubridate::hms(ARR))
+      mutate(ARR = sub("\\.\\d+", "", ARR))
   }
   
   Stationary_cleanedTime1 <- Stationary_cleanedTime %>%
     filter(nchar(DTY) == 10, 
+           #this date is the first data we have for the antennas
            DTY >= as.Date("2020-08-06"), 
-           Code %in% c("I", "S"))
+           Code %in% c("I", "S")) %>%
+    distinct()
   
   return(Stationary_cleanedTime1)
 }
