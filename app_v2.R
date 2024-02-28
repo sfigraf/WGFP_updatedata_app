@@ -119,7 +119,7 @@ server <- function(input, output) {
     
     
     #displays new cleaned data
-    output$new_data_contents <- renderDataTable({
+    output$new_data_contents <- renderDT({
         cleaned_data()
     })
     
@@ -149,9 +149,18 @@ server <- function(input, output) {
         
     })
     
-    output$previousdata <- renderDataTable({
-        
-        previous_detections1()
+    output$previousdata <- renderDT({
+      
+      datatable(
+        previous_detections1(),
+        options = list(
+          #statesave is restore table state on page reload
+          stateSave =TRUE,
+          pageLength = 10, info = TRUE, lengthMenu = list(c(10,25, 50, 100, 200), c("10", "25", "50","100","200")),
+          #dom = 'Blrtip', #had to add 'lowercase L' letter to display the page length again
+          language = list(emptyTable = "Previous Detections not uploaded")
+        )
+      )
     })
     
 
@@ -343,7 +352,7 @@ server <- function(input, output) {
         
     })
     
-    output$combineddata <- renderDataTable({
+    output$combineddata <- renderDT({
       
         updated_data()
     })
