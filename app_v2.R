@@ -46,22 +46,20 @@ ui <- fluidPage(
             tabPanel("New Detections",
                      br(),
                      fluidRow(
-                       column(6, rowTotalsCheck_UI("totalRowsNewDetections")
+                       column(6, textOutput("totalRowsNewDetections")
                        )), 
                      br(),
                      withSpinner(DT::dataTableOutput("new_data_contents"))),
             tabPanel("Previous Detections",
                      br(),
                      fluidRow(
-                       column(6, rowTotalsCheck_UI("totalRowsPreviousDetections")
+                       column(6, textOutput("totalRowsPreviousDetections")
                        )), 
                      br(),
-                     
                      withSpinner(DT::dataTableOutput("previousdata"))),
             tabPanel("Combined Data",
                      br(),
-                     fluidRow(column(6,
-                                     rowTotalsCheck_UI("totalRowsCombinedDetections"),
+                     fluidRow(column(6, textOutput("totalRowsCombinedDetections")
                      )),
                      br(),
                      withSpinner(DT::dataTableOutput("combineddata"))),
@@ -131,10 +129,14 @@ server <- function(input, output, session) {
         })
     # Row Totals --------------------------------------------------------------
     
-    #needs to be below where the data is wrangled    
+    #needs to be below where the data is wrangled   
+    output$totalRowsNewDetections <- renderText({
+      if (isTruthy(cleaned_data())) {
+        text <- c("Number of Rows:", format(nrow(cleaned_data()), big.mark = ","))
+        return(text)
+      }
+    })
     
-    rowTotalsCheck_Server("totalRowsNewDetections", cleaned_data())
-
     #makes a fileUploaded output option to return back to conditional panel for saving csv
     output$fileUploaded <- reactive({
         return(!is.null(cleaned_data()))
@@ -169,8 +171,12 @@ server <- function(input, output, session) {
         
         
     })
-    # rowTotalsCheck_Server("totalRowsPreviousDetections", previous_detections1())
-    
+    output$totalRowsPreviousDetections <- renderText({
+      if (isTruthy(cleaned_data())) {
+        text <- c("Number of Rows:", format(nrow(previous_detections1()), big.mark = ","))
+        return(text)
+      }
+    })
     output$previousdata <- renderDT({
       
       datatable(
@@ -347,7 +353,12 @@ server <- function(input, output, session) {
         
     })
     
-    #rowTotalsCheck_Server("totalRowsCombinedDetections", updated_data())
+    output$totalRowsCombinedDetections <- renderText({
+      if (isTruthy(cleaned_data())) {
+        text <- c("Number of Rows:", format(nrow(updated_data()), big.mark = ","))
+        return(text)
+      }
+    })
     
     output$combineddata <- renderDT({
       
