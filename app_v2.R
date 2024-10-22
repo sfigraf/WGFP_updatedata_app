@@ -17,6 +17,11 @@ for (i in list.files("./functions/")) {
   source(paste0("./functions/",i))
 }
 
+for (i in list.files("./modules/")) {
+  if (grepl(".R", i)) {
+    source(paste0("./modules/",i))
+  }
+}
 
 
 ui <- fluidPage(
@@ -39,11 +44,26 @@ ui <- fluidPage(
             tabPanel("How to Use",
                      includeHTML(paste0("www/", "WGFP_data_uploads_about.html"))),
             tabPanel("New Detections",
+                     br(),
+                     fluidRow(column(6,
+                     rowTotalsCheck_UI("totalRowsNewDetections")
+                     )),
                      withSpinner(DT::dataTableOutput("new_data_contents"))),
             tabPanel("Previous Detections",
+                     br(),
+                     fluidRow(column(6,
+                      textOutput("totalRowsPreviousDetections"),
+                     )),
+                     br(),
                      withSpinner(DT::dataTableOutput("previousdata"))),
             tabPanel("Combined Data",
+                     br(),
+                     fluidRow(column(6,
+                                     textOutput("totalRowsCombinedDetections"),
+                     )),
+                     br(),
                      withSpinner(DT::dataTableOutput("combineddata"))),
+            
             tabPanel("QAQC ",
                      withSpinner(DT::dataTableOutput("problem_times")),
                      withSpinner(plotlyOutput("plot1")), #newdatamarkertagPlot
@@ -56,7 +76,21 @@ ui <- fluidPage(
     )
 )
 
-server <- function(input, output) {
+server <- function(input, output, session) {
+  
+  
+  
+  output$totalRowsPreviousDetections <- renderText({
+    if(isTruthy(previous_detections1())){
+      c("Number of Rows:", format(nrow(previous_detections1()), big.mark = ","))
+    }
+  })
+  
+  output$totalRowsCombinedDetections <- renderText({
+    if(isTruthy(updated_data())){
+      c("Number of Rows:", format(nrow(updated_data()), big.mark = ","))
+    }
+  })
     
     cleaned_data <- reactive({
         # input$file1 will be NULL initially. After the user selects
@@ -107,6 +141,7 @@ server <- function(input, output) {
          
         })
     
+    rowTotalsCheck_Server("totalRowsNewDetections", cleaned_data())
     
     #makes a fileUploaded output option to return back to conditional panel for saving csv
     output$fileUploaded <- reactive({
