@@ -6,10 +6,10 @@
 <h3> How to Use </h3>
 
 <p> Upload the most recent data files from the Biomark or Stationary Antennas in .txt (Stationary), .csv (Stationary file that has already been cleaned by the function) or .xlsx (Biomark) form using "Choose New Detection File". 
-Upload the previous combined WGFP_Raw or Biomark_Raw csv using "Choose Previous Data File". 
+Upload the previous combined WGFP_Raw.rds or Biomark_Raw.csv using "Choose Previous Data File". 
 These new detections and the old detections are combined and shown in the "Combined Data" tab. 
 Save the New Detection File as its own CSV with "Save New Detections as CSV", and
-click "Save Combined Data" to save a new master excel sheet. Add ".csv" to the filename and save.
+click "Save Combined Data" to save a new master excel sheet or .rds file. Add ".csv" to the filename if you're saving the biomark data and save.
 Then, choose a new file to upload and re-upload the previously combined WGFP_Raw or Biomark_Raw file. Recombine and Re-save. Repeat as needed. 
 
 </p>
@@ -21,7 +21,14 @@ Then, choose a new file to upload and re-upload the previously combined WGFP_Raw
 
 <p>
 Older .txt files from the beginning of the project won't currently work because they have different fields than the current fields being used. The current max upload setting is 600 mb. 
+<br>
+<br>
+.Txt files are first parsed out into a df, then it is cleaned before being binded to the previous detection file. This includes taking the decimal off the ARR field, transforming the DTY field to yyy-mm-dd format if needed, removing dates that don't conform to this convention,
+ removing the underscore from the TAG field, removing rows without codes "I" or "S", removing duplicate rows, and removing rows with dates before 2020-08-06. 
+<br>
+<br>
+
 Files are quick to upload but .txt files are automatically cleaned to a viewable, 
-usable form which often takes some time. A 10 mb file should take about 3 mins, depending on processing power. A 30 mb file took 27 minutes. If the new detections file is too large it may not display on the table.
+usable form which often takes some time. A 10 mb file should take about 3 mins, depending on processing power and also whether the app is being ran from the U drive or locally. A 30 mb file took 27 minutes. If the new detections file is too large it may not display on the table.
 
 </p>

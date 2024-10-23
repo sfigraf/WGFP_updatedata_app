@@ -12,16 +12,8 @@ library(plotly)
 #changes max upload size to 600 mb
 options(shiny.maxRequestSize=600*1024^2)
 
-#brings in data cleaning functions
-for (i in list.files("./functions/")) {
-  source(paste0("./functions/",i))
-}
-
-for (i in list.files("./modules/")) {
-  if (grepl(".R", i)) {
-    source(paste0("./modules/",i))
-  }
-}
+#brings in data cleaning function
+source("clean_data_function.R")
 
 
 ui <- fluidPage(
@@ -44,26 +36,11 @@ ui <- fluidPage(
             tabPanel("How to Use",
                      includeHTML(paste0("www/", "WGFP_data_uploads_about.html"))),
             tabPanel("New Detections",
-                     br(),
-                     fluidRow(
-                       column(6, textOutput("totalRowsNewDetections")
-                       )), 
-                     br(),
                      withSpinner(DT::dataTableOutput("new_data_contents"))),
             tabPanel("Previous Detections",
-                     br(),
-                     fluidRow(
-                       column(6, textOutput("totalRowsPreviousDetections")
-                       )), 
-                     br(),
                      withSpinner(DT::dataTableOutput("previousdata"))),
             tabPanel("Combined Data",
-                     br(),
-                     fluidRow(column(6, textOutput("totalRowsCombinedDetections")
-                     )),
-                     br(),
                      withSpinner(DT::dataTableOutput("combineddata"))),
-            
             tabPanel("QAQC ",
                      withSpinner(DT::dataTableOutput("problem_times")),
                      withSpinner(plotlyOutput("plot1")), #newdatamarkertagPlot
@@ -76,8 +53,7 @@ ui <- fluidPage(
     )
 )
 
-server <- function(input, output, session) {
-  
+server <- function(input, output) {
     
     cleaned_data <- reactive({
         # input$file1 will be NULL initially. After the user selects
@@ -93,15 +69,11 @@ server <- function(input, output, session) {
         # if file ends with .txt, it gets cleaned. if it's a biomark one ending in .xlsx, it just gets brought in 
         if (endsWith(inFile$name, ".TXT")) {
             # print(TRUE)
-            new_stationaryFile <- read.delim(inFile$datapath, sep = " ", na.strings=c("", "NA"),
+            x <- read.delim(inFile$datapath, sep = " ", na.strings=c("", "NA"),
                        #skip = 5,
                        header= FALSE)
             #cleans txt file if it is a txt file that was uploaded
-            cleanedTxt <- clean_txt(new_stationaryFile)
-            #cleans timestamps, filters dates
-            cleanedStationary <- cleanStationary(cleanedTxt)
-            
-            return(cleanedStationary)
+            return(clean_txt(x))
             
 
         } else if (endsWith(inFile$name, ".xlsx")) {
@@ -121,21 +93,14 @@ server <- function(input, output, session) {
                 mutate(DTY = ifelse(str_detect(DTY, "/"), 
                                     as.character(mdy(DTY)), 
                                     DTY))
+            #biomark$`Scan Date` <- as_date(mdy(biomark$`Scan Date`))
             
             return(cleaned_stationary)
             
         }
          
         })
-    # Row Totals --------------------------------------------------------------
     
-    #needs to be below where the data is wrangled   
-    output$totalRowsNewDetections <- renderText({
-      if (isTruthy(cleaned_data())) {
-        text <- c("Number of Rows:", format(nrow(cleaned_data()), big.mark = ","))
-        return(text)
-      }
-    })
     
     #makes a fileUploaded output option to return back to conditional panel for saving csv
     output$fileUploaded <- reactive({
@@ -145,8 +110,9 @@ server <- function(input, output, session) {
     outputOptions(output, 'fileUploaded', suspendWhenHidden=FALSE)
     
     
+    
     #displays new cleaned data
-    output$new_data_contents <- renderDT({
+    output$new_data_contents <- renderDataTable({
         cleaned_data()
     })
     
@@ -156,39 +122,27 @@ server <- function(input, output, session) {
     previous_detections1 <- reactive({
         inFile <- input$file2
         
+        
         if (is.null(inFile))
             return(NULL)
         #brings in uploaded file with all columns as characters except DTY column
         ## Parsing error with Dates in Biomark File solved jst by re-adding the last B1 and B2 detection files
         if (grepl("Biomark", inFile$name)) { #(str_detect(inFile, "Biomark"))
             previous_detections <- read_csv(inFile$datapath, col_types = "Dcccccccccc")
-        } else if (str_detect(inFile$name, "WGFP|Stationary")) { #if it's not a biomark file, then it has to be related to Stationary stuff so it will be brought in this way
-            
-          previous_detections <- readRDS(inFile$datapath) #, col_types = "ccccccccccc"
-            previous_detections$EFA <- as.character(previous_detections$EFA)
+        } else if (str_detect(inFile$name, "WGFP")) { #if it's not a biomark file, then it has to be related to Stationary stuff so it will be brought in this way
+            previous_detections <- read_csv(inFile$datapath, col_types = "ccccccccccc")
+            previous_detections <- previous_detections %>%
+                mutate(DTY = ifelse(str_detect(DTY, "/"), 
+                                    as.character(mdy(DTY)), 
+                                    DTY))
         }
-        return(previous_detections)
         
         
     })
-    output$totalRowsPreviousDetections <- renderText({
-      if (isTruthy(cleaned_data())) {
-        text <- c("Number of Rows:", format(nrow(previous_detections1()), big.mark = ","))
-        return(text)
-      }
-    })
-    output$previousdata <- renderDT({
-      
-      datatable(
-        previous_detections1(),
-        options = list(
-          #statesave is restore table state on page reload
-          stateSave =FALSE,
-          pageLength = 10, info = TRUE, lengthMenu = list(c(10,25, 50, 100, 200), c("10", "25", "50","100","200")),
-          #dom = 'Blrtip', #had to add 'lowercase L' letter to display the page length again
-          language = list(emptyTable = "Previous Detections not uploaded")
-        )
-      )
+    
+    output$previousdata <- renderDataTable({
+        
+        previous_detections1()
     })
     
 
@@ -207,11 +161,24 @@ server <- function(input, output, session) {
         if (endsWith(inFile$name, ".TXT") | endsWith(inFile$name, ".csv"))  {
             cleaned_new_time_data <- cleaned_data() %>%
                 filter(
-                    str_detect(TAG, "^0000000")
-                ) 
+                    str_detect(TAG, "^0000_0000000")
+                ) %>%
+                #this is the same process that all_detections goes through
+                mutate(Scan_Time1 = case_when(str_detect(ARR, "AM") & str_detect(ARR, "^12:") ~ hms(ARR) - hours(12),
+                                              str_detect(ARR, "PM") & str_detect(ARR, "^12:") ~ hms(ARR),
+                                              
+                                              str_detect(ARR, "AM") & str_detect(ARR, "^12:", negate = TRUE) ~ hms(ARR),
+                                              str_detect(ARR, "PM") & str_detect(ARR, "^12:", negate = TRUE) ~ hms(ARR) + hours(12),
+                                              #if it doesn't detect PM or AM just do hms(ARR)
+                                              str_detect(ARR, "PM|AM") == FALSE ~ hms(ARR)),
+                       Scan_Time2 = as.character(as_datetime(Scan_Time1)), 
+                       CleanARR = str_trim(str_sub(Scan_Time2, start = 11, end = -1))
+                ) %>%
+                
+                select(Code, DTY, ARR, CleanARR, TRF, DUR, TTY, TAG, SCD, ANT, NCD, EFA)
             
             cleaned_new_time_data1 <- cleaned_new_time_data %>%
-                mutate(hour1 = hour(as_datetime(paste(DTY, ARR)))) 
+                mutate(hour1 = hour(as_datetime(paste(DTY, CleanARR)))) 
                 
         } else if (endsWith(inFile$name, ".xlsx")) { 
             new_biomark1 <- cleaned_data() %>%
@@ -251,10 +218,24 @@ server <- function(input, output, session) {
             #filters to get just marker tags then corrects ARR time
             previous_detections2 <- previous_detections1() %>%
                 filter(
-                    str_detect(TAG, "^0000000")
-                )
+                    str_detect(TAG, "^0000_0000000")
+                ) %>%
+                #this is the same process that all_detections goes through
+                mutate(Scan_Time1 = case_when(str_detect(ARR, "AM") & str_detect(ARR, "^12:") ~ hms(ARR) - hours(12),
+                                              str_detect(ARR, "PM") & str_detect(ARR, "^12:") ~ hms(ARR),
+                                              
+                                              str_detect(ARR, "AM") & str_detect(ARR, "^12:", negate = TRUE) ~ hms(ARR),
+                                              str_detect(ARR, "PM") & str_detect(ARR, "^12:", negate = TRUE) ~ hms(ARR) + hours(12),
+                                              #if it doesn't detect PM or AM just do hms(ARR)
+                                              str_detect(ARR, "PM|AM") == FALSE ~ hms(ARR)),
+                       Scan_Time2 = as.character(as_datetime(Scan_Time1)), 
+                       CleanARR = str_trim(str_sub(Scan_Time2, start = 11, end = -1))
+                ) %>%
+                
+                select(Code, DTY, ARR, CleanARR, TRF, DUR, TTY, TAG, SCD, ANT, NCD, EFA)
+            
             previous_detections2 <- previous_detections2 %>%
-                mutate(hour1 = hour(as_datetime(paste(DTY, ARR))))
+                mutate(hour1 = hour(as_datetime(paste(DTY, CleanARR))))
         }
         
         previous_det_list <- list(
@@ -269,7 +250,7 @@ server <- function(input, output, session) {
     
     output$problem_times <- renderDT({
         datatable(plot_ready_previous_data()$problem_times,
-                  caption = h4("Problem Times: Previous Detections, Time got read in wrong (number of characters in string under 8). This is a good thing if this df is empty") )
+                  caption = h4("Problem Times: Previous Detections, Time got read in wrong (number of characters in string under 8)") )
     })
     
     
@@ -344,24 +325,12 @@ server <- function(input, output, session) {
     
     # Combining Files ---------------------------------------------------------
     updated_data <- reactive({
-        combinedDetections <- bind_rows(previous_detections1(), cleaned_data())
-        combinedDetections$EFA <- as.numeric(combinedDetections$EFA)
-        #delete duplicate rows
-        combinedDetections <- combinedDetections %>%
-          distinct()
-        return(combinedDetections)
+        new_x <- bind_rows(previous_detections1(),cleaned_data())
         
     })
     
-    output$totalRowsCombinedDetections <- renderText({
-      if (isTruthy(cleaned_data())) {
-        text <- c("Number of Rows:", format(nrow(updated_data()), big.mark = ","))
-        return(text)
-      }
-    })
-    
-    output$combineddata <- renderDT({
-      
+    output$combineddata <- renderDataTable({
+        
         updated_data()
     })
     # Saving New Combined File
@@ -373,7 +342,7 @@ server <- function(input, output, session) {
             function() {
                 inFile <- input$file1
                 if (endsWith(inFile$name, ".TXT") | endsWith(inFile$name, ".csv")) {
-                    paste("WGFP_Raw", str_sub(inFile,-13,-5), ".rds", sep = "")
+                    paste("WGFP_Raw", str_sub(inFile,-13,-5), ".csv", sep = "")
                     
                 } else if (endsWith(inFile$name, ".xlsx")) {
                     paste("Biomark_Raw", str_sub(inFile,-14,-6), ".csv", sep = "")
@@ -382,17 +351,12 @@ server <- function(input, output, session) {
             }
         ,
         content = function(file) {
-          inFile <- input$file2
-          if(endsWith(inFile$name, ".rds")){
-            
-            saveRDS(updated_data(), file = file)
-          } else if(endsWith(inFile$name, ".csv")){
             write_csv(updated_data(), file,  progress = TRUE)
-          }
         }
     )
-
-
+    
+    
+    
     
 }
 
