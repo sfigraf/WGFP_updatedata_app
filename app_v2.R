@@ -17,6 +17,11 @@ for (i in list.files("./functions/")) {
   source(paste0("./functions/",i))
 }
 
+for (i in list.files("./modules/")) {
+  if (grepl(".R", i)) {
+    source(paste0("./modules/",i))
+  }
+}
 
 
 ui <- fluidPage(
@@ -39,11 +44,26 @@ ui <- fluidPage(
             tabPanel("How to Use",
                      includeHTML(paste0("www/", "WGFP_data_uploads_about.html"))),
             tabPanel("New Detections",
+                     br(),
+                     fluidRow(
+                       column(6, textOutput("totalRowsNewDetections")
+                       )), 
+                     br(),
                      withSpinner(DT::dataTableOutput("new_data_contents"))),
             tabPanel("Previous Detections",
+                     br(),
+                     fluidRow(
+                       column(6, textOutput("totalRowsPreviousDetections")
+                       )), 
+                     br(),
                      withSpinner(DT::dataTableOutput("previousdata"))),
             tabPanel("Combined Data",
+                     br(),
+                     fluidRow(column(6, textOutput("totalRowsCombinedDetections")
+                     )),
+                     br(),
                      withSpinner(DT::dataTableOutput("combineddata"))),
+            
             tabPanel("QAQC ",
                      withSpinner(DT::dataTableOutput("problem_times")),
                      withSpinner(plotlyOutput("plot1")), #newdatamarkertagPlot
@@ -56,7 +76,8 @@ ui <- fluidPage(
     )
 )
 
-server <- function(input, output) {
+server <- function(input, output, session) {
+  
     
     cleaned_data <- reactive({
         # input$file1 will be NULL initially. After the user selects
@@ -106,7 +127,15 @@ server <- function(input, output) {
         }
          
         })
+    # Row Totals --------------------------------------------------------------
     
+    #needs to be below where the data is wrangled   
+    output$totalRowsNewDetections <- renderText({
+      if (isTruthy(cleaned_data())) {
+        text <- c("Number of Rows:", format(nrow(cleaned_data()), big.mark = ","))
+        return(text)
+      }
+    })
     
     #makes a fileUploaded output option to return back to conditional panel for saving csv
     output$fileUploaded <- reactive({
@@ -142,14 +171,19 @@ server <- function(input, output) {
         
         
     })
-    
+    output$totalRowsPreviousDetections <- renderText({
+      if (isTruthy(cleaned_data())) {
+        text <- c("Number of Rows:", format(nrow(previous_detections1()), big.mark = ","))
+        return(text)
+      }
+    })
     output$previousdata <- renderDT({
       
       datatable(
         previous_detections1(),
         options = list(
           #statesave is restore table state on page reload
-          stateSave =TRUE,
+          stateSave =FALSE,
           pageLength = 10, info = TRUE, lengthMenu = list(c(10,25, 50, 100, 200), c("10", "25", "50","100","200")),
           #dom = 'Blrtip', #had to add 'lowercase L' letter to display the page length again
           language = list(emptyTable = "Previous Detections not uploaded")
@@ -319,6 +353,13 @@ server <- function(input, output) {
         
     })
     
+    output$totalRowsCombinedDetections <- renderText({
+      if (isTruthy(cleaned_data())) {
+        text <- c("Number of Rows:", format(nrow(updated_data()), big.mark = ","))
+        return(text)
+      }
+    })
+    
     output$combineddata <- renderDT({
       
         updated_data()
@@ -350,9 +391,8 @@ server <- function(input, output) {
           }
         }
     )
-    
-    
-    
+
+
     
 }
 
