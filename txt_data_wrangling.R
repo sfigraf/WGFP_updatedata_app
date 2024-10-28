@@ -244,3 +244,10 @@ write_csv(previous_detections, "Biomark_Raw_20211109_3.csv")
 CR_RB_A2_20220110 <- read_csv("CR_RB_A2_20220110.csv")
 #
 cleaned_stationary <- read_csv("CR_RB_A2_20220110.csv", col_types = "cDccccccccc")
+########### 10/28/2024
+#code to change column names in master biomark file to be the same as coming off the readers and save as rds
+biomarkWithAllwantedFeilds <- read_rds("Biomark_Raw_20221102.rds")
+
+fileWithDesiredColumns <- read_excel("CR_KB_B2_20220602.xlsx")
+names(biomarkWithAllwantedFeilds) <- names(fileWithDesiredColumns)
+saveRDS(biomarkWithAllwantedFeilds, "Biomark_Raw_20221102.rds")
