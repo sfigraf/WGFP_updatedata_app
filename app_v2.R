@@ -348,9 +348,9 @@ server <- function(input, output, session) {
         #heads up: bind_rows will add more rows if the rows doesn't match up, so important that columns are the same
         # 10/30/24: I feel conflicted putting this function in because it makes it so you don't have to have the same column names in the raw files 
         # as the master one, but we'll see how it works. 
-        dataToAdd <- alignColumns(cleaned_data(), names(previous_detections1()), previous_detections1())
+        #dataToAdd <- alignColumns(cleaned_data(), names(previous_detections1()), previous_detections1())
         
-        combinedDetections <- bind_rows(previous_detections1(), dataToAdd)
+        combinedDetections <- bind_rows(previous_detections1(), cleaned_data())
         
         #delete duplicate rows
         combinedDetections <- combinedDetections %>%
