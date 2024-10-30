@@ -107,7 +107,7 @@ server <- function(input, output, session) {
         } else if (endsWith(inFile$name, ".xlsx")) {
             #reads excel file if it was a excel file
             biomark <- read_excel(inFile$datapath, sheet = "Downloaded Tag IDs")
-            biomark$`Scan Date` <- as_date(mdy(biomark$`Scan Date`))
+            biomark$`Scan Date` <- as.character(mdy(biomark$`Scan Date`))
             #Error in <Anonymous>: 'data' must be 2-dimensional (e.g. data frame or matrix)
             #solved by wrapping biomark in return statement
             return(biomark)
@@ -161,7 +161,7 @@ server <- function(input, output, session) {
         #brings in uploaded file with all columns as characters except DTY column
         ## Parsing error with Dates in Biomark File solved jst by re-adding the last B1 and B2 detection files
         if (grepl("Biomark", inFile$name)) { #(str_detect(inFile, "Biomark"))
-            previous_detections <- read_csv(inFile$datapath, col_types = "Dcccccccccc")
+            previous_detections <- readRDS(inFile$datapath) #col_types = "Dcccccccccc"
         } else if (str_detect(inFile$name, "WGFP|Stationary")) { #if it's not a biomark file, then it has to be related to Stationary stuff so it will be brought in this way
             
           previous_detections <- readRDS(inFile$datapath) #, col_types = "ccccccccccc"
@@ -172,7 +172,7 @@ server <- function(input, output, session) {
         
     })
     output$totalRowsPreviousDetections <- renderText({
-      if (isTruthy(cleaned_data())) {
+      if (isTruthy(previous_detections1())) {
         text <- c("Number of Rows:", format(nrow(previous_detections1()), big.mark = ","))
         return(text)
       }
@@ -344,17 +344,23 @@ server <- function(input, output, session) {
     
     # Combining Files ---------------------------------------------------------
     updated_data <- reactive({
+      if(isTruthy(cleaned_data()) && isTruthy(previous_detections1())){
+        #heads up: bind_rows will add more rows if the rows doesn't match up, so important that columns are the same
+        # 10/30/24: I feel conflicted putting this function in because it makes it so you don't have to have the same column names in the raw files 
+        # as the master one, but we'll see how it works. 
+        #dataToAdd <- alignColumns(cleaned_data(), names(previous_detections1()), previous_detections1())
+        
         combinedDetections <- bind_rows(previous_detections1(), cleaned_data())
-        combinedDetections$EFA <- as.numeric(combinedDetections$EFA)
+        
         #delete duplicate rows
         combinedDetections <- combinedDetections %>%
           distinct()
         return(combinedDetections)
-        
+      }
     })
     
     output$totalRowsCombinedDetections <- renderText({
-      if (isTruthy(cleaned_data())) {
+      if (isTruthy(updated_data())) {
         text <- c("Number of Rows:", format(nrow(updated_data()), big.mark = ","))
         return(text)
       }
@@ -363,6 +369,7 @@ server <- function(input, output, session) {
     output$combineddata <- renderDT({
       
         updated_data()
+      
     })
     # Saving New Combined File
     
@@ -376,19 +383,14 @@ server <- function(input, output, session) {
                     paste("WGFP_Raw", str_sub(inFile,-13,-5), ".rds", sep = "")
                     
                 } else if (endsWith(inFile$name, ".xlsx")) {
-                    paste("Biomark_Raw", str_sub(inFile,-14,-6), ".csv", sep = "")
+                    paste("Biomark_Raw", str_sub(inFile,-14,-6), ".rds", sep = "")
                     
                 }
             }
         ,
         content = function(file) {
           inFile <- input$file2
-          if(endsWith(inFile$name, ".rds")){
-            
             saveRDS(updated_data(), file = file)
-          } else if(endsWith(inFile$name, ".csv")){
-            write_csv(updated_data(), file,  progress = TRUE)
-          }
         }
     )
 
