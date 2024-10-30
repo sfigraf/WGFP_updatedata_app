@@ -390,12 +390,7 @@ server <- function(input, output, session) {
         ,
         content = function(file) {
           inFile <- input$file2
-          #if(endsWith(inFile$name, ".rds")){
-            
             saveRDS(updated_data(), file = file)
-          # } else if(endsWith(inFile$name, ".csv")){
-          #   write_csv(updated_data(), file,  progress = TRUE)
-          # }
         }
     )
 
