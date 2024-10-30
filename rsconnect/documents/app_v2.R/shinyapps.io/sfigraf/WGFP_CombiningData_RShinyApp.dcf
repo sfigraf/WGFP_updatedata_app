@@ -1,11 +1,11 @@
 name: WGFP_CombiningData_RShinyApp
-title: WGFP_CombiningData_RShinyApp
+title: WGFP_updatedata_app
 username:
 account: sfigraf
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5463770
-bundleId: 9292576
+bundleId: 9293022
 url: https://sfigraf.shinyapps.io/WGFP_CombiningData_RShinyApp/
 asMultiple: FALSE
 asStatic: FALSE

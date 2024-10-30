@@ -172,7 +172,7 @@ server <- function(input, output, session) {
         
     })
     output$totalRowsPreviousDetections <- renderText({
-      if (isTruthy(cleaned_data())) {
+      if (isTruthy(previous_detections1())) {
         text <- c("Number of Rows:", format(nrow(previous_detections1()), big.mark = ","))
         return(text)
       }
@@ -344,20 +344,23 @@ server <- function(input, output, session) {
     
     # Combining Files ---------------------------------------------------------
     updated_data <- reactive({
-      #heads up: bind_rows will add more rows if the rows doesn't match up, so important that columns are the same
-      dataToAdd <- alignColumns(cleaned_data(), names(previous_detections1()), previous_detections1())
-      
+      if(isTruthy(cleaned_data()) && isTruthy(previous_detections1())){
+        #heads up: bind_rows will add more rows if the rows doesn't match up, so important that columns are the same
+        # 10/30/24: I feel conflicted putting this function in because it makes it so you don't have to have the same column names in the raw files 
+        # as the master one, but we'll see how it works. 
+        dataToAdd <- alignColumns(cleaned_data(), names(previous_detections1()), previous_detections1())
+        
         combinedDetections <- bind_rows(previous_detections1(), dataToAdd)
         
         #delete duplicate rows
         combinedDetections <- combinedDetections %>%
           distinct()
         return(combinedDetections)
-        
+      }
     })
     
     output$totalRowsCombinedDetections <- renderText({
-      if (isTruthy(cleaned_data())) {
+      if (isTruthy(updated_data())) {
         text <- c("Number of Rows:", format(nrow(updated_data()), big.mark = ","))
         return(text)
       }
@@ -366,6 +369,7 @@ server <- function(input, output, session) {
     output$combineddata <- renderDT({
       
         updated_data()
+      
     })
     # Saving New Combined File
     
