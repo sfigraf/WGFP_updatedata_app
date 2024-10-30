@@ -349,7 +349,6 @@ server <- function(input, output, session) {
       
         combinedDetections <- bind_rows(previous_detections1(), dataToAdd)
         
-       # combinedDetections$EFA <- as.numeric(combinedDetections$EFA)
         #delete duplicate rows
         combinedDetections <- combinedDetections %>%
           distinct()

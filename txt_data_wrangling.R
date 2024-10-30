@@ -251,3 +251,7 @@ biomarkWithAllwantedFeilds <- read_rds("Biomark_Raw_20221102.rds")
 fileWithDesiredColumns <- read_excel("CR_KB_B2_20220602.xlsx")
 names(biomarkWithAllwantedFeilds) <- names(fileWithDesiredColumns)
 saveRDS(biomarkWithAllwantedFeilds, "Biomark_Raw_20221102.rds")
+
+CR_RR_B5_20241001 <- read_excel("CR_RR_B5_20241001.xlsx")
+
+x <- alignColumns(CR_RR_B5_20241001, names(biomarkWithAllwantedFeilds), biomarkWithAllwantedFeilds)
