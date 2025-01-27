@@ -255,3 +255,8 @@ saveRDS(biomarkWithAllwantedFeilds, "Biomark_Raw_20221102.rds")
 CR_RR_B5_20241001 <- read_excel("CR_RR_B5_20241001.xlsx")
 
 x <- alignColumns(CR_RR_B5_20241001, names(biomarkWithAllwantedFeilds), biomarkWithAllwantedFeilds)
+
+###
+new_stationaryFile <- read.delim("CR_CF_A5_20241107.txt", sep = " ", na.strings=c("", "NA"),
+                                 #skip = 5,
+                                 header= FALSE)
