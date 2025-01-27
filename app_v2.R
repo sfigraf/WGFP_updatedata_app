@@ -65,9 +65,21 @@ ui <- fluidPage(
                      withSpinner(DT::dataTableOutput("combineddata"))),
             
             tabPanel("QAQC ",
-                     withSpinner(DT::dataTableOutput("problem_times")),
-                     withSpinner(plotlyOutput("plot1")), #newdatamarkertagPlot
-                     withSpinner(plotlyOutput("plot2"))) #combined data hourly marker tags
+                     tabsetPanel(
+                       tabPanel("Problem Times", 
+                                withSpinner(DT::dataTableOutput("problem_times")),
+                       ), 
+                       tabPanel("Hourly Marker Tag", 
+                                withSpinner(plotlyOutput("plot1")), #newdatamarkertagPlot
+                                withSpinner(plotlyOutput("plot2")) #combined data hourly marker tags
+                       ), 
+                       tabPanel("Overall Marker Tags", 
+                                withSpinner(plotlyOutput("markerTagPlot")) 
+                                
+                       )
+                     )
+                     
+            )
             
             
         ), #end of tabset panel
@@ -211,12 +223,17 @@ server <- function(input, output, session) {
                 ) 
             
             cleaned_new_time_data1 <- cleaned_new_time_data %>%
-                mutate(hour1 = hour(as_datetime(paste(DTY, ARR)))) 
+                mutate(hour1 = hour(as_datetime(paste(DTY, ARR))), 
+                       Scan_Date = as_date(DTY), 
+                       Scan_Time = ARR) 
                 
         } else if (endsWith(inFile$name, ".xlsx")) { 
             new_biomark1 <- cleaned_data() %>%
                 filter(str_detect(`DEC Tag ID`, "^999")) %>%
-                mutate(hour1 = hour(as_datetime(paste(`Scan Date`, `Scan Time`)))) %>%
+                mutate(hour1 = hour(as_datetime(paste(`Scan Date`, `Scan Time`))), 
+                       Scan_Date = as_date(`Scan Date`), 
+                       Scan_Time = `Scan Time`, 
+                       TAG = `DEC Tag ID`) %>%
                 rename(SCD = `Reader ID`)
         }
     })
@@ -298,7 +315,24 @@ server <- function(input, output, session) {
         ggplotly(Markers_only_new)
       }
         
-    })    
+    }) 
+    
+    output$markerTagPlot <- renderPlotly({
+      req(plot_ready_new_data())
+      plot_ready_new_data() %>%
+          ggplot(aes(x = Scan_Date, y = Scan_Time, color = TAG, text = paste(TAG))) +
+          geom_point() +
+          labs(title = "New Data Marker Tag Detection Times") +
+          xlab("Date") +
+          ylab("Time") +
+          theme_classic() +
+          theme(
+            axis.text.y = element_blank(),
+            axis.text.x = element_blank(),
+            axis.ticks = element_blank()) +
+        scale_color_manual(values = c("#02549C", "#076324", "#FEE01F", "#D8B8AA"))
+        
+    })
     #QAQC Previos detections
     output$plot2 <- renderPlotly({
       if(is.null( plot_ready_previous_data()$plotready_prev)){
@@ -349,6 +383,8 @@ server <- function(input, output, session) {
         # 10/30/24: I feel conflicted putting this function in because it makes it so you don't have to have the same column names in the raw files 
         # as the master one, but we'll see how it works. 
         #dataToAdd <- alignColumns(cleaned_data(), names(previous_detections1()), previous_detections1())
+        #changed my mind, i don't want this in here for now. Worried it could lead to accidently deleting rows from new data or saving new columns where we don't want any
+        # just another bilt in qaqc to make sure the raw data columns are the same. 
         
         combinedDetections <- bind_rows(previous_detections1(), cleaned_data())
         
