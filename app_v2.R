@@ -381,12 +381,12 @@ server <- function(input, output, session) {
       if(isTruthy(cleaned_data()) && isTruthy(previous_detections1())){
         #heads up: bind_rows will add more rows if the rows doesn't match up, so important that columns are the same
         # 10/30/24: I feel conflicted putting this function in because it makes it so you don't have to have the same column names in the raw files 
-        # as the master one, but we'll see how it works. 
-        #dataToAdd <- alignColumns(cleaned_data(), names(previous_detections1()), previous_detections1())
-        #changed my mind, i don't want this in here for now. Worried it could lead to accidently deleting rows from new data or saving new columns where we don't want any
+        # as the master one, but we'll see how it works. could lead to accidently deleting rows from new data or saving new columns where we don't want any
+
+        dataToAdd <- alignColumns(cleaned_data(), names(previous_detections1()), previous_detections1())
         # just another bilt in qaqc to make sure the raw data columns are the same. 
         
-        combinedDetections <- bind_rows(previous_detections1(), cleaned_data())
+        combinedDetections <- bind_rows(previous_detections1(), dataToAdd)
         
         #delete duplicate rows
         combinedDetections <- combinedDetections %>%
