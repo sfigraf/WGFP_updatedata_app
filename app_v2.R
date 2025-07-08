@@ -416,10 +416,10 @@ server <- function(input, output, session) {
             function() {
                 inFile <- input$file1
                 if (endsWith(inFile$name, ".TXT") | endsWith(inFile$name, ".csv")) {
-                    paste("WGFP_Raw", str_sub(inFile,-13,-5), ".rds", sep = "")
+                    paste("WGFP_Stationary_Raw", str_sub(inFile,-13,-5), ".rds", sep = "")
                     
                 } else if (endsWith(inFile$name, ".xlsx")) {
-                    paste("Biomark_Raw", str_sub(inFile,-14,-6), ".rds", sep = "")
+                    paste("WGFP_Biomark_Raw", str_sub(inFile,-14,-6), ".rds", sep = "")
                     
                 }
             }
