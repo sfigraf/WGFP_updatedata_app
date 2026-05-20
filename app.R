@@ -70,8 +70,8 @@ ui <- fluidPage(
                                 withSpinner(DT::dataTableOutput("problem_times")),
                        ), 
                        tabPanel("Hourly Marker Tag", 
-                                withSpinner(plotlyOutput("plot1")), #newdatamarkertagPlot
-                                withSpinner(plotlyOutput("plot2")) #combined data hourly marker tags
+                                withSpinner(plotlyOutput("plot1"))#, #newdatamarkertagPlot
+                                #withSpinner(plotlyOutput("plot2")) #combined data hourly marker tags
                        ), 
                        tabPanel("Overall Marker Tags", 
                                 withSpinner(plotlyOutput("markerTagPlot")) 
@@ -358,32 +358,43 @@ server <- function(input, output, session) {
         
     })
     #QAQC Previos detections
-    output$plot2 <- renderPlotly({
-      if(is.null( plot_ready_previous_data()$plotready_prev)){
-        plot_ly() %>%
-          layout(
-            title = "Empty Plot: No Previous Detections Uploaded",
-            xaxis = list(visible = FALSE),
-            yaxis = list(visible = FALSE)
-          )
-      } else {
-        plot_ready_previous_data()$plotready_prev %>%
-          plot_ly(
-            x = ~hour1, 
-            color = ~SCD, 
-            text = ~SCD,
-            type = "histogram",
-            hovertemplate = "Count: %{y}<br>Hour of day: %{x}<br>Site code: %{text}<extra></extra>"
-          ) %>%
-          layout(
-            title = "Hourly Marker Tags by Site: Previous Detections",
-            xaxis = list(title = "Hour of Day"),
-            yaxis = list(title = "Count"),
-            barmode = "stack"
-          )
-      }
-        
-    })    
+    # output$plot2 <- renderPlotly({
+    #   if(is.null( plot_ready_previous_data()$plotready_prev)){
+    #     plot_ly() %>%
+    #       layout(
+    #         title = "Empty Plot: No Previous Detections Uploaded",
+    #         xaxis = list(visible = FALSE),
+    #         yaxis = list(visible = FALSE)
+    #       )
+    #   } else {
+    #     
+    #     # 1. Grab the dataframe so we don't have to keep calling the reactive
+    #     df_prev <- plot_ready_previous_data()$plotready_prev
+    #     
+    #     # 2. Count exactly how many unique site codes (SCD) you have
+    #     num_sites <- length(unique(df_prev$SCD))
+    #     
+    #     # 3. Dynamically stretch the color palette so it always has enough colors!
+    #     expanded_colors <- colorRampPalette(RColorBrewer::brewer.pal(8, "Set2"))(num_sites)
+    #     
+    #     df_prev %>%
+    #       plot_ly(
+    #         x = ~hour1, 
+    #         color = ~SCD, 
+    #         colors = expanded_colors, # Apply the crash-proof palette here
+    #         text = ~SCD,
+    #         type = "histogram",
+    #         hovertemplate = "Count: %{y}<br>Hour of day: %{x}<br>Site code: %{text}<extra></extra>"
+    #       ) %>%
+    #       layout(
+    #         title = "Hourly Marker Tags by Site: Previous Detections",
+    #         xaxis = list(title = "Hour of Day"),
+    #         yaxis = list(title = "Count"),
+    #         barmode = "stack"
+    #       )
+    #   }
+    #     
+    # })    
     
     # Downloading CSV ---------------------------------------------------------
     output$download1 <- downloadHandler(
