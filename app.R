@@ -303,15 +303,7 @@ server <- function(input, output, session) {
           )
         
       } else {
-        # Markers_only_new <- plot_ready_new_data() %>%
-        #   ggplot(aes(x = hour1, fill = SCD)) +
-        #   geom_bar(stat = "Count") +
-        #   theme_classic() +
-        #   labs(title = "Hourly Marker Tags by Site: New Detections",
-        #        x = "Hour of Day")
-        # 
-        # 
-        # ggplotly(Markers_only_new)
+
         plot_ready_new_data() %>%
           plot_ly(
             x = ~hour1, 
@@ -328,37 +320,13 @@ server <- function(input, output, session) {
             yaxis = list(title = "Count"),
             barmode = "stack" 
           )
-        # plot_ready_new_data() %>%
-        #   plot_ly(
-        #     x = ~hour1, 
-        #     color = ~SCD, 
-        #     type = "histogram"
-        #   ) %>%
-        #   layout(
-        #     title = "Hourly Marker Tags by Site: New Detections",
-        #     xaxis = list(title = "Hour of Day"),
-        #     yaxis = list(title = "Count"),
-        #     barmode = "stack" 
-        #   )
+
       }
         
     }) 
     
     output$markerTagPlot <- renderPlotly({
-      # req(plot_ready_new_data())
-      # plot_ready_new_data() %>%
-      #     ggplot(aes(x = Scan_Date, y = Scan_Time, color = TAG, text = paste(TAG))) +
-      #     geom_point() +
-      #     labs(title = "New Data Marker Tag Detection Times") +
-      #     xlab("Date") +
-      #     ylab("Time") +
-      #     theme_classic() +
-      #     theme(
-      #       axis.text.y = element_blank(),
-      #       axis.text.x = element_blank(),
-      #       axis.ticks = element_blank()) +
-      #   scale_color_manual(values = c("#02549C", "#076324", "#FEE01F", "#D8B8AA"))
-      
+
       req(plot_ready_new_data())
       plot_ready_new_data() %>%
         plot_ly(
@@ -387,32 +355,6 @@ server <- function(input, output, session) {
             zeroline = FALSE
           )
         )
-      # plot_ready_new_data() %>%
-      #   plot_ly(
-      #     x = ~Scan_Date, 
-      #     y = ~Scan_Time, 
-      #     color = ~TAG, 
-      #     colors = c("#02549C", "#076324", "#FEE01F", "#D8B8AA"),
-      #     text = ~paste(TAG),
-      #     hoverinfo = "text",
-      #     type = "scatter", 
-      #     mode = "markers"
-      #   ) %>%
-      #   layout(
-      #     title = "New Data Marker Tag Detection Times",
-      #     xaxis = list(
-      #       title = "Date",
-      #       showticklabels = FALSE, 
-      #       showgrid = FALSE, 
-      #       zeroline = FALSE
-      #     ),
-      #     yaxis = list(
-      #       title = "Time",
-      #       showticklabels = FALSE, 
-      #       showgrid = FALSE, 
-      #       zeroline = FALSE
-      #     )
-      #   )
         
     })
     #QAQC Previos detections
@@ -424,13 +366,6 @@ server <- function(input, output, session) {
             xaxis = list(visible = FALSE),
             yaxis = list(visible = FALSE)
           )
-        # emptydf <- data.frame(X = c(0,1), Y = c(0,1))
-        # emptydf %>%
-        #   ggplot(aes(x = X)) +
-        #   theme_classic() +
-        #   labs(title = "Empty Plot: No Previous Detections Uploaded" 
-        #   )
-        
       } else {
         plot_ready_previous_data()$plotready_prev %>%
           plot_ly(
@@ -446,36 +381,9 @@ server <- function(input, output, session) {
             yaxis = list(title = "Count"),
             barmode = "stack"
           )
-        # plot_ready_previous_data()$plotready_prev %>%
-        #   plot_ly(
-        #     x = ~hour1, 
-        #     color = ~SCD, 
-        #     text = ~as.character(hour1),
-        #     hoverinfo = "x+y+text",
-        #     type = "histogram"
-        #   ) %>%
-        #   layout(
-        #     title = "Hourly Marker Tags by Site: Previous Detections",
-        #     xaxis = list(title = "Hour of Day"),
-        #     yaxis = list(title = "Count"),
-        #     barmode = "stack"
-        #   )
-        # Markers_only_previous <- plot_ready_previous_data()$plotready_prev %>%
-        # 
-        #   ggplot(aes(x = hour1, fill = SCD, text = as.character(hour1))) +
-        #   geom_bar(stat = "Count") +
-        #   theme_classic() +
-        #   labs(title = "Hourly Marker Tags by Site: Previous Detections",
-        #        x = "Hour of Day")
-        # 
-        # 
-        # ggplotly(Markers_only_previous)
       }
         
     })    
-    
-    
-    
     
     # Downloading CSV ---------------------------------------------------------
     output$download1 <- downloadHandler(
@@ -486,8 +394,6 @@ server <- function(input, output, session) {
         ,
         content = function(file) {
             write_csv(cleaned_data(), file)
-            
-            
         }
     )
     
